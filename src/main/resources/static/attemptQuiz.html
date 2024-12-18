@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Ready</title>
+    <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 20px;
+          text-align: center;
+        }
+        button {
+          background-color: #4CAF50;
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          font-size: 16px;
+          cursor: pointer;
+          border-radius: 5px;
+        }
+        button:hover {
+          background-color: #45a049;
+        }
+        h1 {
+          color: #333;
+        }
+    </style>
+</head>
+<body>
+<h1>Your Quiz is Ready to be attempted</h1>
+<p>Click below to attempt the quiz.</p>
+<button onclick="attemptQuiz()">Attempt Quiz</button>
+
+<script>
+    function attemptQuiz() {
+      const quizId = 1;
+      window.location.href = `quiz.html?quizId=${quizId}`;
+    }
+</script>
+</body>
+</html>

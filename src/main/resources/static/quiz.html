@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            text-align: center;
+            color: #333;
+        }
+        .question {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+        }
+        .option {
+            margin: 5px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .option:hover {
+            background-color: #e2e6ea;
+        }
+        .option.selected {
+            background-color: #28a745;
+            color: white;
+        }
+        #submitBtn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #submitBtn:hover {
+            background-color: #218838;
+        }
+        #submitBtn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        #loading, #error {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        #error {
+            color: #dc3545;
+        }
+        #resultsContainer {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #e8f5e9;
+            border: 2px solid #28a745;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .result-score {
+            font-size: 36px;
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Quiz</h1>
+    <div id="loading">Loading quiz questions...</div>
+    <div id="error" style="display: none;"></div>
+    <div id="quizContainer" style="display: none;"></div>
+    <button id="submitBtn" disabled>Submit Quiz</button>
+    <div id="resultsContainer"></div>
+</div>
+
+<script>
+    const quizContainer = document.getElementById('quizContainer');
+    const submitBtn = document.getElementById('submitBtn');
+    const loadingElement = document.getElementById('loading');
+    const errorElement = document.getElementById('error');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const userAnswers = {};
+    let quizData = [];
+
+    async function fetchQuizData() {
+        try {
+            const response = await fetch('/quiz/get/1');
+            if (!response.ok) {
+                throw new Error('Failed to fetch quiz data');
+            }
+            quizData = await response.json();
+            renderQuiz();
+        } catch (error) {
+            console.error('Error fetching quiz data:', error);
+            showError('Failed to load quiz questions. Please try again later.');
+        }
+    }
+
+    function renderQuiz() {
+        if (quizData.length === 0) {
+            showError('No quiz questions available.');
+            return;
+        }
+
+        loadingElement.style.display = 'none';
+        quizContainer.style.display = 'block';
+
+        quizData.forEach((question, index) => {
+            const questionElement = document.createElement('div');
+            questionElement.className = 'question';
+            questionElement.innerHTML = `
+                <h3>${index + 1}. ${question.questionTitle}</h3>
+                <div class="options">
+                    ${['option1', 'option2', 'option3', 'option4'].map(option => `
+                        <div class="option" data-question-id="${question.id}" data-option="${option}">
+                            ${question[option]}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            quizContainer.appendChild(questionElement);
+        });
+
+        document.querySelectorAll('.option').forEach(option => {
+            option.addEventListener('click', selectOption);
+        });
+    }
+
+    function selectOption(e) {
+        const id = e.target.dataset.questionId;
+        const response = e.target.textContent.trim();
+
+        e.target.parentElement.querySelectorAll('.option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+
+        e.target.classList.add('selected');
+
+        userAnswers[id] = response;
+
+        submitBtn.disabled = Object.keys(userAnswers).length !== quizData.length;
+    }
+
+    async function submitQuiz() {
+        const quizId = 1;
+        const url = `/quiz/submit/${quizId}`;
+
+        const submitData = Object.entries(userAnswers).map(([questionId, answer]) => ({
+            id: parseInt(questionId),
+            response: answer
+        }));
+        console.log('Submit data:', submitData);
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(submitData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Server responded with an error');
+            }
+
+            const results = await response.json();
+             console.log('Results from server:', results);
+            if (!results || typeof results.score === 'undefined' || typeof results.totalQuestions === 'undefined') {
+                throw new Error('Invalid response from server');
+            }
+
+            displayResults(results);
+        } catch (error) {
+            console.error('Error:', error);
+            showError('Failed to submit quiz. Please try again.');
+        }
+    }
+
+    function displayResults(results) {
+        quizContainer.style.display = 'none';
+        submitBtn.style.display = 'none';
+        resultsContainer.style.display = 'block';
+
+        const { score, totalQuestions } = results;
+
+        resultsContainer.innerHTML = `
+            <h2>Results</h2>
+            <div class="result-score">
+                Score: ${score} / ${totalQuestions}
+            </div>
+            <p>You did good :></p>
+        `;
+    }
+
+    function showError(message) {
+        loadingElement.style.display = 'none';
+        quizContainer.style.display = 'none';
+        submitBtn.style.display = 'none';
+        errorElement.style.display = 'block';
+        errorElement.textContent = message;
+    }
+
+    fetchQuizData();
+    submitBtn.addEventListener('click', submitQuiz);
+</script>
+</body>
+</html>
+
