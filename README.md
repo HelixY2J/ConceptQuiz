@@ -23,9 +23,15 @@ The application uses an **H2 database** for storing quiz data, including questio
 
 ### 1. **Running the JAR file**
 
-If you have already built the project and generated the JAR file, you can run the application by following these steps:
+To generate the JAR file, follow these steps:
 
-1. **Open Command Prompt** (`cmd`).
+
+1. Open a terminal in the root of your project directory and run - 
+ ```bash
+   mvn package
+ ```
+ This will generate the JAR file in /target dir
+
 2. **Navigate to the directory** where the JAR file is located and run it
    
    Example:
