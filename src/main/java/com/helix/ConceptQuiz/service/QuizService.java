@@ -66,16 +66,36 @@ public class QuizService {
                 .collect(Collectors.toMap(QuestionPrint::getId, QuestionPrint::getCorrectAnswer));
 
 
-        for (AnswerPrint answerPrint : responses) {
+        List<Map<String, Object>> responseWithCOrrectAnswers = new ArrayList<>();
+
+        for(AnswerPrint answerPrint : responses) {
+            String selectedAnswer = answerPrint.getResponse();
             String correctAnswer = correctAnswersMap.get(answerPrint.getId());
-            if (correctAnswer != null && correctAnswer.equals(answerPrint.getResponse())) {
+
+            if (selectedAnswer == null || correctAnswer == null) {
+                continue;
+            }
+
+            boolean isCorrect = correctAnswer != null && correctAnswer.equals(answerPrint.getResponse());
+
+
+            responseWithCOrrectAnswers.add(Map.of(
+                    "questionId", answerPrint.getId(),
+                    "selectedAnswer", selectedAnswer,
+                    "correctAnswer", correctAnswer,
+                    "isCorrect", isCorrect
+            ));
+
+            if(isCorrect) {
                 count++;
             }
+
         }
 
         Map<String, Object> resultMap = new HashMap<>();
-        resultMap.put("score",count);
-        resultMap.put("totalQuestions",total);
+        resultMap.put("score", count);
+        resultMap.put("totalQuestions", total);
+        resultMap.put("responses", responseWithCOrrectAnswers);
 
         return resultMap;
     }

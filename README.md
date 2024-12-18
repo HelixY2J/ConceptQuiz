@@ -8,7 +8,8 @@ A very basic quiz - the backend API provides three main endpoints for quiz relat
 - **`/quiz/get/{id}`**: Fetches the quiz questions for a specific quiz by its ID.
 - **`/quiz/submit/{id}`**: Submits the answers for a specific quiz, calculating the score and providing the results.
 
-The application uses an **H2 database** for storing quiz data, including questions and quiz submissions.
+The application uses an **H2 database** for storing quiz data -  questions and quiz submissions. A total of 21 questions are preloaded into the H2 database when the application starts. 
+For each quiz session, 5 questions are randomly selected from this pool for the user.
 
 
 ## Note
